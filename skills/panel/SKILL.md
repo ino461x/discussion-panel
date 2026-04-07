@@ -37,7 +37,7 @@ inertia and structured roles force examination of angles the main conversation m
 ```
 /discussion [topic]                Standard (2 panelists)
 /discussion full [topic]           Full panel (4 panelists)
-/discussion extrafull [topic]      MAX panel (5 panelists)
+/discussion max [topic]      MAX panel (5 panelists)
 /discussion [topic] --ctx          Force codebase exploration (default ON for technical topics)
 /discussion [topic] --no-ctx       Explicitly disable codebase exploration
 ```
@@ -58,7 +58,7 @@ No questions needed. Just run Standard + Sonnet silently.
 
 #### Medium / Heavy topics
 Present both questions together using AskUserQuestion. Set the recommended option
-based on topic weight (Medium → Full + Balanced, Heavy → Extrafull + All Opus).
+based on topic weight (Medium → Full + Balanced, Heavy → Max + All Opus).
 
 ```json
 {
@@ -77,7 +77,7 @@ based on topic weight (Medium → Full + Balanced, Heavy → Extrafull + All Opu
           "description": "4視点 (+ Architect, Outsider)。設計判断に最適"
         },
         {
-          "label": "Extrafull",
+          "label": "Max",
           "description": "5視点 (+ Contrarian)。重大な意思決定向き"
         }
       ]
@@ -107,7 +107,7 @@ based on topic weight (Medium → Full + Balanced, Heavy → Extrafull + All Opu
 
 Adjust the "(Recommended)" label based on topic weight:
 - **Medium**: Full + Balanced recommended
-- **Heavy**: Extrafull + All Opus recommended
+- **Heavy**: Max + All Opus recommended
 
 #### Balanced model assignment
 
@@ -145,7 +145,7 @@ from the same underlying model.
 | **Architect** | Root causes, systemic effects, long-term consequences, design coherence, overlooked synergies and reuse opportunities | First Principles decomposition | Draw the dependency chain first. Map what depends on what before forming any opinion. |
 | **Outsider** | Unnecessary complexity, confusing naming, "why not just...?" questions | Beginner's Mind + Cross-domain analogy | Name one example from outside software that solved this same class of problem. Start from that. |
 
-### Extrafull mode — 5 panelists (adds):
+### Max mode — 5 panelists (adds):
 
 | Role | Focus | Cognitive Framework | Starting Artifact |
 |------|-------|---------------------|-------------------|
@@ -274,7 +274,7 @@ coverage), not a bug, but keep it in mind when synthesizing results.
 ---
 
 ## Discussion Panel: [Topic in ~10 words]
-*Mode: [standard/full/extrafull] | Panelists: [N]*
+*Mode: [standard/full/max] | Panelists: [N]*
 
 ### Summary
 - **Consensus**: [Points all panelists agreed on]
@@ -350,13 +350,13 @@ The panel informs; it doesn't dictate. The USER decides.
 |------|-----------|---------------|-------------------------|
 | Standard | 2 (Critic, Realist) | sonnet | ~3x |
 | Full | 4 (+Architect, Outsider) | sonnet (opus recommended) | ~5-6x |
-| Extrafull | 5 (+Contrarian) | opus | ~7-8x |
+| Max | 5 (+Contrarian) | opus | ~7-8x |
 
 With `--ctx` active (default for technical topics), add ~1.5-2x to the above multipliers
 due to codebase exploration. Use `--no-ctx` to suppress this on technical topics where
 exploration is not needed.
 
-Extrafull with Opus is the most expensive configuration but also the most thorough.
+Max with Opus is the most expensive configuration but also the most thorough.
 Reserve it for decisions where the cost of a wrong choice far exceeds the analysis cost.
 
 **Model selection rationale (from empirical testing):**
@@ -364,4 +364,4 @@ Reserve it for decisions where the cost of a wrong choice far exceeds the analys
   tokens than Sonnet for comparable or lower quality output.
 - **Sonnet**: Best cost/quality ratio. Default for Standard and Full modes.
 - **Opus**: Deepest analysis. Recommended for Full on important decisions, mandatory
-  default for Extrafull. The user can always override.
+  default for Max. The user can always override.

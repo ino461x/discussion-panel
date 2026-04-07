@@ -39,7 +39,7 @@ Each panelist uses a different **cognitive framework** (Pre-mortem, First Princi
 
 - **Claude Code** (CLI, Desktop App, or IDE extension)
 - **Claude Pro / Max / Team / Enterprise plan** (sub-agents require the Agent tool)
-- Standard mode spawns 2 agents, Full spawns 4, Extrafull spawns 5
+- Standard mode spawns 2 agents, Full spawns 4, Max spawns 5
 
 ## Installation
 
@@ -69,7 +69,7 @@ That's it. The skill will assess the topic's weight and ask you to configure the
 
 **Q1: Scale** - How many panelists?
 
-| Standard | Full | Extrafull |
+| Standard | Full | Max |
 |----------|------|-----------|
 | 2 panelists | 4 panelists | 5 panelists |
 | Critic, Realist | + Architect, Outsider | + Contrarian |
@@ -104,7 +104,7 @@ Adds:
 | **Architect** | Root causes, systemic effects, missed synergies | First Principles | Map the dependency chain first |
 | **Outsider** | Unnecessary complexity, "why not just...?" | Beginner's Mind | Name a non-software domain that solved this |
 
-### Extrafull (5 panelists)
+### Max (5 panelists)
 
 Adds:
 
