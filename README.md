@@ -15,6 +15,7 @@
   <a href="#modes">Modes</a> &bull;
   <a href="#output-format">Output</a> &bull;
   <a href="#how-it-works">How it works</a> &bull;
+  <a href="#deep-dive">Deep dive</a> &bull;
   <a href="#examples">Examples</a>
 </p>
 
@@ -58,6 +59,14 @@ cp -r discussion-panel/skills/panel .claude/skills/
 
 Both `/discussion` and `/panel` invoke the same skill — `panel` is simply a shorter alias for convenience.
 
+### Updating
+
+```bash
+cd discussion-panel && git pull
+cp -r skills/discussion /path/to/your/project/.claude/skills/
+cp -r skills/panel /path/to/your/project/.claude/skills/
+```
+
 ## Usage
 
 ```
@@ -75,12 +84,20 @@ That's it. The skill will assess the topic's weight and ask you to configure the
 | Critic, Realist | + Architect, Outsider | + Contrarian |
 | Quick check | Design decisions | High-stakes calls |
 
+**When to use which mode:**
+
+| Your situation | Recommended |
+|----------------|-------------|
+| Quick sanity check, single-file change, easily reversible | Standard |
+| Design decision, multi-file refactor, choosing between approaches | Full |
+| High-stakes architecture call, hard-to-reverse migration, team-wide impact | Max |
+
 **Q2: Model** - What quality level?
 
 | All Sonnet | Balanced | All Opus |
 |------------|----------|----------|
-| Fast & cheap | Best cost/quality | Maximum depth |
-| All panelists use Sonnet | Key roles use Opus | All panelists use Opus |
+| Fast & cheap | Best cost/quality (~4x for Standard) | Maximum depth |
+| All panelists use Sonnet | Key roles (Critic, Architect, Contrarian) use Opus | All panelists use Opus |
 
 For light topics, it just runs without asking.
 
@@ -112,24 +129,11 @@ Adds:
 |------|-------|-----------|-------------------|
 | **Contrarian** | Strongest case for the **opposite** approach | Steel-man inversion | Describe what was built in a world where this approach was never proposed |
 
-### Differentiated Input
-
-Each panelist receives a **different view** of the same facts:
-
-| Panelist | Information view |
-|----------|-----------------|
-| Critic | All facts + implicit assumptions highlighted |
-| Realist | All facts + technical & business constraints highlighted |
-| Architect | All facts + dependency/structural info highlighted |
-| Outsider | **Topic and stakes ONLY** (intentional blank slate) |
-| Contrarian | All facts + user's argument placed prominently |
-
-
 ## Output Format
 
 Each panelist produces:
 1. **Starting Artifact** (the thinking exercise)
-2. **Reasoning chain** (150-200 words developing their key insight)
+2. **Reasoning chain** (150-200 words, anchored in the Starting Artifact — not general advice)
 3. **1-3 findings** with severity ratings
 
 Results are synthesized into:
@@ -140,6 +144,8 @@ Results are synthesized into:
 | **Reasoning Highlight** | The single most compelling reasoning chain, quoted verbatim |
 | **Findings Table** | All findings sorted by severity (CRITICAL > HIGH > MEDIUM > LOW) |
 | **Collision Analysis** | Where panelists contradicted each other — and what third conclusion follows |
+
+Severity is assigned by each panelist based on their analysis, then sorted in the final synthesis.
 
 Severity definitions:
 
@@ -156,8 +162,22 @@ Severity definitions:
 2. **Differentiated Input** — Each panelist gets a different view. Outsider sees topic + stakes only.
 3. **Starting Artifact** — Mandatory thinking exercise (failure scenarios, cost estimates, dependency maps) before any findings.
 4. **Deep Reasoning** — 150-200 word reasoning chain per panelist. No jumping to conclusions.
-5. **Synthesis + Collision Analysis** — Contradictions examined: "If both are right, what third conclusion follows?"
+5. **Synthesis + Collision Analysis** — A fresh sub-agent examines only reasoning chains (not conclusions) for contradictions: "If both are right, what third conclusion follows?"
 6. **Facilitation** — You decide what to act on.
+
+## Deep Dive
+
+### Differentiated Input
+
+Each panelist receives a **different view** of the same facts:
+
+| Panelist | Information view |
+|----------|-----------------|
+| Critic | All facts + implicit assumptions highlighted; also asked to list 3 questions the brief does NOT address |
+| Realist | All facts + technical & business constraints highlighted |
+| Architect | All facts + dependency/structural info highlighted |
+| Outsider | **Topic and stakes ONLY** (intentional blank slate; topic only for non-technical) |
+| Contrarian | All facts + user's argument placed prominently |
 
 ## Examples
 

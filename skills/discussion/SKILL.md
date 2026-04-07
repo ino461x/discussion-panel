@@ -192,11 +192,28 @@ panelists in the current mode (Standard = Critic + Realist only).
 
 | Panelist | Receives |
 |----------|----------|
-| **Critic** | All categories + implicit assumptions section placed prominently at top |
+| **Critic** | All categories + implicit assumptions prominently at top. Also add: "List 3 questions this brief does NOT address — what's conspicuously absent?" |
 | **Realist** | All categories + technical and business constraints highlighted |
 | **Architect** | All categories + technical constraints + dependency/structural information highlighted |
 | **Outsider** | Topic and stakes ONLY — no constraints, no user argument, no prior attempts (intentional blank slate) |
 | **Contrarian** | All categories + user's argument placed prominently at top |
+
+**Outsider information hygiene**: Strip implementation-specific terms (function names,
+file paths, library names) from the Outsider's Stakes description. Write Stakes in
+business/user-impact language only. For non-technical topics, omit Stakes entirely
+and give Outsider the Topic sentence only.
+
+#### Step 1.5b: Dynamic Artifact Parameterization
+
+Before spawning panelists, inject topic-specific context from Step 1 into each
+role's Starting Artifact instruction (from the Panelist Roster tables above). Append the relevant element: Critic gets a specific
+implicit assumption to attack, Realist gets the specific approach to estimate,
+Architect gets the key component to map from, Contrarian gets the user's stated approach
+to invert. Outsider receives no injection (preserve blank-slate).
+
+Fallback: if multiple candidates exist, prefer the most specific. Defaults:
+Critic → first implicit assumption, Realist → the approach's costliest phase,
+Architect → the component with most dependencies, Contrarian → user's core claim.
 
 ### Step 2: Spawn Panelists
 
@@ -219,6 +236,7 @@ beyond what is provided below — this is intentional, to avoid inheriting biase
 
 ## Starting Artifact (mandatory — do not skip; findings must emerge from this exercise)
 [ARTIFACT_INSTRUCTION]
+Then: identify one non-obvious implication from what you just wrote.
 
 ## Your information view
 [BRIEF_VIEW from Step 1.5 — the panelist-specific subset]
@@ -226,7 +244,9 @@ beyond what is provided below — this is intentional, to avoid inheriting biase
 ## Output format
 1. **Starting Artifact** — complete the exercise above, written out in full
 2. **Reasoning chain** — your most important finding developed in 150-200 words.
-   Follow the logic step by step. Do not jump to conclusions.
+   Must emerge from your Starting Artifact. Begin with "From [name a specific element —
+   e.g., failure scenario 2, the hidden dependency you mapped, the Phase 3 cost estimate]..."
+   to anchor reasoning in the exercise, not general pattern-matching.
 3. **Findings** — 1 to 3 findings only, each with a severity label:
    CRITICAL = blocks progress or causes failure if ignored
    HIGH     = significant risk or missed opportunity
@@ -238,6 +258,8 @@ Rules:
 - "This might cause problems" is useless. "This breaks when X because Y" is useful.
 - If you need to see code to give a real answer, say so rather than speculating.
 - If the current approach is genuinely good, say so — then name what still warrants watching.
+- At one point in your reasoning, name what would have to be true for your
+  conclusion to be wrong — then decide if it changes anything.
 - Write in the same language as the topic.
 ```
 
@@ -249,10 +271,15 @@ You have access to the codebase. Explore before you analyze.
 
 Your exploration focus for [ROLE]:
   Critic:      Test files, error handling, input validation
+               Ask: "Where are exceptions silenced? What inputs go unvalidated?"
   Realist:     Dependency files (package.json etc.), build config, CI config
+               Ask: "What dependencies are unused? Where is build complexity hiding?"
   Architect:   Data models, schemas, inter-module dependency graph
+               Ask: "Where do modules bypass the intended architecture? What's coupled that shouldn't be?"
   Outsider:    README, documentation, public API surface
+               Ask: "Where does the docs promise something the code doesn't deliver?"
   Contrarian:  Oldest files, legacy code, TODO/FIXME comments
+               Ask: "What old decisions still constrain us? Which TODOs reveal abandoned better paths?"
 ```
 
 With `--ctx`, panelists may reference different files. This is a feature (broader
@@ -288,6 +315,9 @@ coverage), not a bug, but keep it in mind when synthesizing results.
 Sort rows by severity (CRITICAL > HIGH > MEDIUM > LOW).
 Within the same severity: Critic → Realist → Architect → Outsider → Contrarian.
 
+### Collision Analysis
+[Results from Step 3.5 sub-agent — omit this section for Standard mode]
+
 ---
 
 *Panel complete. What resonates? Want to dig deeper into any point?*
@@ -299,18 +329,38 @@ rather than surfacing new angles." Honest framing over padding.
 
 ### Step 3.5: Collision Analysis
 
-After presenting findings, scan for direct contradictions between panelists.
-For each significant contradiction, reason through it using this structure:
+**Full and Max modes only.** For Standard mode (2 panelists), skip the dedicated
+sub-agent — briefly note any tension between the two reasoning chains inline.
 
+For Full/Max: spawn a **dedicated sub-agent** (fresh context, no conversation history).
+Pass it ONLY the Reasoning Chains from each panelist — not their Findings.
+This prevents "solving the mystery after knowing the answer."
+
+Agent prompt:
 ```
-[Panelist A] said: [position A]
-[Panelist B] said: [position B]
-If both are correct simultaneously, the third conclusion is: [Z]
+You are the Collision Analyst. You receive only the reasoning chains from a review panel.
+You have NOT seen their conclusions.
+
+## Topic under review
+[Topic from Step 1]
+
+## Reasoning chains
+[Insert each panelist's Reasoning Chain, labeled by role — e.g., **Critic:** ...]
+
+Note: Each panelist's reasoning may contain an internal self-challenge
+(a "what if I'm wrong" moment). Do not treat these as contradictions
+between panelists — they are within-panelist dialectic, not between-panelist conflict.
+
+## Your task
+1. Identify contradictions or tensions between the reasoning chains.
+2. For each: "If both lines of reasoning are correct, the third conclusion is: [Z]"
+3. If no genuine contradictions exist, say so honestly.
+
+Format: **[Role A] vs [Role B]**: [contradiction]. Third conclusion: [Z].
+Output 1-3 collision results. Do not manufacture collisions.
 ```
 
-Emergent insights live at these intersections. If no genuine contradictions exist,
-write "No significant contradictions — panelists operated on compatible assumptions."
-Do not manufacture collisions. One real collision is more valuable than three invented ones.
+Include the Collision Analysis results in the Step 3 output after the Findings table.
 
 ### Step 4: Facilitate
 
@@ -323,6 +373,16 @@ After presenting results:
 
 The panel informs; it doesn't dictate. The USER decides.
 
+### Step 5: Implementation Pipeline (optional)
+
+If the user wants to act on findings (typically ≥2 accepted findings), offer a
+two-agent workflow. Note: this adds significant token cost (Opus generation + review).
+
+1. **Generator** (Opus — needs deepest reasoning for faithful implementation) —
+   accepted findings as numbered checklist + file paths. Implement all, add nothing extra.
+2. **Reviewer** — same checklist. Verify each item: PASS/FAIL with line references.
+3. Present review results. Fix any FAILs before closing.
+
 ## When NOT to use
 
 - Simple factual questions with clear answers
@@ -334,9 +394,9 @@ The panel informs; it doesn't dictate. The USER decides.
 
 | Mode | Panelists | Default model | Approx. token multiplier |
 |------|-----------|---------------|-------------------------|
-| Standard | 2 (Critic, Realist) | sonnet | ~3x |
-| Full | 4 (+Architect, Outsider) | sonnet (opus recommended) | ~5-6x |
-| Max | 5 (+Contrarian) | opus | ~7-8x |
+| Standard | 2 (Critic, Realist) | sonnet | ~3x (~4x with Balanced) |
+| Full | 4 (+Architect, Outsider) | sonnet (opus recommended) | ~5-6x (~7x with Balanced) |
+| Max | 5 (+Contrarian) | opus (Balanced = default) | ~7-8x |
 
 With `--ctx` active (default for technical topics), add ~1.5-2x to the above multipliers
 due to codebase exploration. Use `--no-ctx` to suppress this on technical topics where
