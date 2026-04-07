@@ -201,10 +201,10 @@ Output:
 
 > | # | Severity | Finding | Panelist |
 > |---|----------|---------|----------|
-> | 1 | CRITICAL | `delete_account` has no transaction boundary design | Architect |
-> | 2 | HIGH | Routes import repo directly, bypassing service layer | Critic |
+> | 1 | CRITICAL | `handle_payment` has no transaction boundary — partial writes on failure | Architect |
+> | 2 | HIGH | Routes import DB directly, bypassing service layer | Critic |
 > | 3 | HIGH | Moving code to services just moves the fat — need to split by domain | Realist |
-> | 4 | MEDIUM | Follow the bookmarks pattern — already proven in this codebase | Outsider |
+> | 4 | MEDIUM | Split routes by resource (users, orders, payments) like the existing auth module | Outsider |
 
 ## Flags
 
