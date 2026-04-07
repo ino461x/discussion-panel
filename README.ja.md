@@ -1,7 +1,7 @@
 [English](README.md) | **日本語**
 
 <p align="center">
-  <img src="assets/banner.png" alt="Discussion Panel" width="600">
+  <img src="assets/banner.png" alt="Discussion Panel">
 </p>
 
 <h1 align="center">Discussion Panel</h1>

@@ -260,6 +260,9 @@ Rules:
 - If the current approach is genuinely good, say so — then name what still warrants watching.
 - At one point in your reasoning, name what would have to be true for your
   conclusion to be wrong — then decide if it changes anything.
+- Before writing your Reasoning chain, identify which ONE of the above constraints
+  matters most for this specific topic. Invest your deepest analysis there.
+  Satisfy the others, but not at the expense of depth on your primary constraint.
 - Write in the same language as the topic.
 ```
 
@@ -318,6 +321,14 @@ Within the same severity: Critic → Realist → Architect → Outsider → Cont
 ### Collision Analysis
 [Results from Step 3.5 sub-agent — omit this section for Standard mode]
 
+### Findings Validation
+[Results from Step 3.7 — omit for Standard mode]
+
+| # | Finding | Rating | Rationale |
+|---|---------|--------|-----------|
+| 1 | [finding summary] | ◎/○/△/✕ | [1-sentence reason] |
+| ... | ... | ... | ... |
+
 ---
 
 *Panel complete. What resonates? Want to dig deeper into any point?*
@@ -333,16 +344,21 @@ rather than surfacing new angles." Honest framing over padding.
 sub-agent — briefly note any tension between the two reasoning chains inline.
 
 For Full/Max: spawn a **dedicated sub-agent** (fresh context, no conversation history).
-Pass it ONLY the Reasoning Chains from each panelist — not their Findings.
-This prevents "solving the mystery after knowing the answer."
+Pass it the Reasoning Chains AND a 2-3 line summary of each Starting Artifact
+(but NOT their Findings). Artifact summaries enable premise-level collision detection
+while still preventing "solving the mystery after knowing the answer."
 
 Agent prompt:
 ```
-You are the Collision Analyst. You receive only the reasoning chains from a review panel.
-You have NOT seen their conclusions.
+You are the Collision Analyst. You receive the reasoning chains and artifact summaries
+from a review panel. You have NOT seen their conclusions.
 
 ## Topic under review
 [Topic from Step 1]
+
+## Starting Artifact summaries
+[Insert a 2-3 line summary of each panelist's Starting Artifact, labeled by role.
+ Capture the core premise/framing, not the full exercise output.]
 
 ## Reasoning chains
 [Insert each panelist's Reasoning Chain, labeled by role — e.g., **Critic:** ...]
@@ -354,13 +370,46 @@ between panelists — they are within-panelist dialectic, not between-panelist c
 ## Your task
 1. Identify contradictions or tensions between the reasoning chains.
 2. For each: "If both lines of reasoning are correct, the third conclusion is: [Z]"
-3. If no genuine contradictions exist, say so honestly.
+3. **Anti-consensus check**: If all panelists agree on a point, evaluate whether
+   that agreement could be a shared blind spot. Ask: "What would a dissenter argue?"
+   If you can construct a credible dissent, flag it as a consensus risk.
+4. If no genuine contradictions or suspicious consensus exist, say so honestly.
 
-Format: **[Role A] vs [Role B]**: [contradiction]. Third conclusion: [Z].
-Output 1-3 collision results. Do not manufacture collisions.
+Format:
+- Collisions: **[Role A] vs [Role B]**: [contradiction]. Third conclusion: [Z].
+- Consensus risks: **Shared assumption**: [what they all assumed]. Possible dissent: [argument].
+Output 1-3 collision results and 0-2 consensus risks. Do not manufacture either.
 ```
 
 Include the Collision Analysis results in the Step 3 output after the Findings table.
+
+### Step 3.7: Findings Validation (Full and Max modes only)
+
+After Collision Analysis, the **orchestrator** (not a sub-agent) validates each finding
+against the actual context. Only the orchestrator has full conversation history and
+codebase access — panelists operated with limited views and may have factual errors.
+
+For each finding, check:
+
+1. **Factual accuracy** — Does the finding correctly reference the actual design/code?
+   Panelists with `--ctx` may read stale or wrong files; Outsider has minimal context by design.
+2. **Already addressed** — Is the concern already handled by an existing design element
+   that the panelist couldn't see? (e.g., Outsider won't know about Information Distribution)
+3. **Empirical evidence** — Does the panel's own output provide evidence for or against?
+   (e.g., if all panelists maintained Falsifiability, a claim that "Falsifiability drops out
+   under word pressure" is contradicted by the panel's own run.)
+
+Rate each finding:
+
+| Rating | Meaning |
+|--------|---------|
+| ◎ | Accurate and actionable |
+| ○ | Valid but limited in scope or severity |
+| △ | Partially correct — pattern is real but specifics are wrong |
+| ✕ | Factual error, already addressed by existing design, or contradicted by evidence |
+
+Present the validation table in the Step 3 output after Collision Analysis.
+This ensures users don't waste effort acting on findings based on incorrect premises.
 
 ### Step 4: Facilitate
 

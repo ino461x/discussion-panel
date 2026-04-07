@@ -1,7 +1,7 @@
 <p align="right"><strong>English</strong> | <a href="README.ja.md">日本語</a></p>
 
 <p align="center">
-  <img src="assets/banner.png" alt="Discussion Panel" width="600">
+  <img src="assets/banner.png" alt="Discussion Panel">
 </p>
 
 <h1 align="center">Discussion Panel</h1>
