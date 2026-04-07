@@ -13,6 +13,7 @@
   <a href="#installation">Install</a> &bull;
   <a href="#usage">Usage</a> &bull;
   <a href="#modes">Modes</a> &bull;
+  <a href="#output-format">Output</a> &bull;
   <a href="#how-it-works">How it works</a> &bull;
   <a href="#examples">Examples</a>
 </p>
@@ -34,14 +35,28 @@ When you work 1-on-1 with an AI for a long session, dangerous patterns emerge:
 
 Think of it as convening a review panel - not to override your judgment, but to make sure you've seen the full picture before committing.
 
+## Requirements
+
+- **Claude Code** (CLI, Desktop App, or IDE extension)
+- **Claude Pro / Max / Team / Enterprise plan** (sub-agents require the Agent tool)
+- Standard mode spawns 2 agents, Full spawns 4, Extrafull spawns 5
+
 ## Installation
 
 ```bash
-# Clone and install
-git clone https://github.com/YOUR_ACCOUNT/discussion-panel.git
+git clone https://github.com/ino461x/discussion-panel.git
 ```
 
-Copy the `skills/discussion/` and `skills/panel/` directories into your Claude Code skills directory.
+Copy the skill directories into your project's `.claude/skills/` folder:
+
+```bash
+# From your project root
+mkdir -p .claude/skills
+cp -r discussion-panel/skills/discussion .claude/skills/
+cp -r discussion-panel/skills/panel .claude/skills/
+```
+
+Both `/discussion` and `/panel` invoke the same skill — `panel` is simply a shorter alias for convenience.
 
 ## Usage
 
@@ -66,6 +81,8 @@ That's it. The skill will assess the topic's weight and ask you to configure the
 |------------|----------|----------|
 | Fast & cheap | Best cost/quality | Maximum depth |
 | All panelists use Sonnet | Key roles use Opus | All panelists use Opus |
+
+**Why 2 questions?** Scale controls *breadth* (how many perspectives), Model controls *depth* (how strong each perspective is). This lets you optimize cost vs. thoroughness for each decision.
 
 For light topics, it just runs without asking.
 
@@ -97,6 +114,43 @@ Adds:
 
 The Contrarian doesn't just poke holes (that's Critic's job). They construct a coherent argument for a completely different direction: *"What if we did the exact opposite, and here's why it might actually be better..."*
 
+### Balanced Model in Action
+
+With `Balanced` model selection, the heavy-thinking roles (Critic, Architect, Contrarian) run on **Opus** while practical roles (Realist, Outsider) run on **Sonnet** - optimal cost/quality ratio.
+
+## Output Format
+
+Results are presented as a severity-rated findings table for quick scanning:
+
+| Severity | Meaning |
+|----------|---------|
+| **CRITICAL** | Blocks progress or causes failure if ignored |
+| **HIGH** | Significant risk or missed opportunity |
+| **MEDIUM** | Worth considering but not urgent |
+| **LOW** | Minor improvement or nitpick |
+
+Example output:
+
+```
+## Discussion Panel: Should we migrate to microservices?
+Mode: full | Panelists: 4
+
+### Summary
+- Consensus: Current monolith is the bottleneck for team scaling
+- Tensions: Critic says "migrate selectively" vs Architect says "strangler fig pattern"
+- Discoveries: The auth module alone causes 60% of deploy conflicts
+
+### Findings
+
+| # | Severity | Finding                                                          | Panelist  |
+|---|----------|------------------------------------------------------------------|-----------|
+| 1 | CRITICAL | No circuit breaker design — one service failure cascades         | Architect |
+| 2 | HIGH     | Team has zero distributed systems experience                     | Realist   |
+| 3 | HIGH     | Current test suite assumes single-process — breaks on migration  | Critic    |
+| 4 | MEDIUM   | Start with auth module extraction only — lowest risk validation  | Outsider  |
+| 5 | MEDIUM   | Define service boundaries before writing any code                | Architect |
+```
+
 ## How It Works
 
 ```
@@ -109,13 +163,14 @@ The Contrarian doesn't just poke holes (that's Critic's job). They construct a c
    the structured brief - no conversation history, no prior conclusions.
 
 3. Analysis
-   Each panelist produces up to 5 concrete, actionable bullet points.
+   Each panelist produces up to 5 severity-rated findings.
 
 4. Synthesis
    Results are presented with a summary first:
    - Consensus: what all panelists agreed on
    - Tensions: where they disagreed
    - Discoveries: genuinely new angles
+   Then a unified findings table sorted by severity.
 
 5. Facilitation
    You decide which points to act on. The panel informs, it doesn't dictate.
@@ -126,15 +181,15 @@ The Contrarian doesn't just poke holes (that's Critic's job). They construct a c
 ### Design Decision
 
 ```
-/discussion Should we unify the LP and dashboard designs?
+/discussion Should we unify the marketing site and dashboard designs?
 ```
 
 Output:
-> **Consensus**: Full unification is unnecessary and risky. Multi-theme system conflicts with Glass Garden's fixed design.
+> **Consensus**: Full unification is unnecessary and risky. Different audiences need different UX.
 >
 > **Tensions**: None (unanimous)
 >
-> **Discoveries**: "Add LP's brand color as one dashboard theme" achieves brand continuity at 1/10 the cost.
+> **Discoveries**: "Add the marketing site's brand color as one dashboard theme" achieves brand continuity at 1/10 the cost.
 
 ### Architecture Review
 
@@ -143,15 +198,13 @@ Output:
 ```
 
 Output:
-> **Consensus**: Problem isn't line count but responsibility mixing. Direct repo imports from routes violate the 3-layer architecture.
->
-> **Tensions**: Critic says "move to services is just moving the fat" vs Realist says "split routes files like bookmarks pattern, add a no-DB-in-routes rule"
->
-> **Discoveries**: `api_delete_account` has no transaction boundary design - fixing this matters more than moving code around.
 
-### Balanced Model in Action
-
-With `Balanced` model selection, the heavy-thinking roles (Critic, Architect, Contrarian) run on **Opus** while practical roles (Realist, Outsider) run on **Sonnet** - optimal cost/quality ratio.
+> | # | Severity | Finding | Panelist |
+> |---|----------|---------|----------|
+> | 1 | CRITICAL | `delete_account` has no transaction boundary design | Architect |
+> | 2 | HIGH | Routes import repo directly, bypassing service layer | Critic |
+> | 3 | HIGH | Moving code to services just moves the fat — need to split by domain | Realist |
+> | 4 | MEDIUM | Follow the bookmarks pattern — already proven in this codebase | Outsider |
 
 ## Flags
 

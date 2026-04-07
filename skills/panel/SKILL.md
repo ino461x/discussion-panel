@@ -207,6 +207,12 @@ ongoing conversation.
 - Limit your response to 5 bullet points maximum. 1-2 sentences each.
 - You're not here to be contrarian for sport. If the current approach is
   genuinely good, say so — then point out what's still worth watching.
+- Assign a severity to each finding:
+  CRITICAL = blocks progress or causes failure if ignored
+  HIGH = significant risk or missed opportunity
+  MEDIUM = worth considering but not urgent
+  LOW = minor improvement or nitpick
+  Format each point as: **[SEVERITY]** Finding text
 - Write in the same language as the topic.
 ```
 
@@ -235,24 +241,28 @@ Note: with `--ctx`, panelists may reference different files. This is a feature
 - **Tensions**: [Where panelists disagreed — state both sides. "None" if unanimous]
 - **Discoveries**: [New angles nobody in the original conversation raised]
 
----
+### Findings
 
-### Critic
-- [bullet 1]
-- ...
+| # | Severity | Finding | Panelist |
+|---|----------|---------|----------|
+| 1 | CRITICAL | [most severe finding] | [role] |
+| 2 | HIGH | [next finding] | [role] |
+| 3 | MEDIUM | [finding] | [role] |
+| ... | ... | ... | ... |
 
-### Realist
-- [bullet 1]
-- ...
-
-[### Architect — full/extrafull only]
-[### Outsider — full/extrafull only]
-[### Contrarian — extrafull only]
+Sort rows by severity (CRITICAL > HIGH > MEDIUM > LOW).
+Within the same severity, order by panelist: Critic → Realist → Architect → Outsider → Contrarian.
 
 ---
 
 *Panel complete. What resonates? Want to dig deeper into any point?*
 ```
+
+**Severity definitions:**
+- **CRITICAL**: Blocks progress or causes failure if ignored
+- **HIGH**: Significant risk or missed opportunity
+- **MEDIUM**: Worth considering but not urgent
+- **LOW**: Minor improvement or nitpick
 
 For **Discoveries**: only include genuinely new insights. If panelists simply
 restated known concerns, write "None — panelists reinforced existing concerns
