@@ -11,6 +11,8 @@ description: >
   "should we X or Y?" dilemma — both technical and non-technical.
 ---
 
+<!-- Canonical source. If editing, also copy to skills/panel/SKILL.md (change name: to panel). -->
+
 # Discussion — Multi-Perspective Analysis Panel
 
 ## Why this skill exists
@@ -40,18 +42,12 @@ inertia and structured roles force examination of angles the main conversation m
 /discussion [topic] --no-ctx       Explicitly disable codebase exploration
 ```
 
-**`--ctx` default behavior:**
-- Technical topics (code, architecture, bugs, refactoring): `--ctx` is ON by default
-- Non-technical topics (process, priorities, UX direction): `--ctx` is OFF by default
-- The main agent decides which category applies; user can override with `--ctx` / `--no-ctx`
+`--ctx` default: ON for technical topics (code, architecture, bugs), OFF for non-technical.
+User can override with `--ctx` / `--no-ctx`.
 
-**Mode can also be combined:** `/discussion full [topic] --ctx`
+If invoked **without a mode specifier**, assess the topic's weight:
 
-If invoked **without a mode specifier**, do NOT default to standard blindly.
-Assess the topic's weight, then use **AskUserQuestion with 2 questions** to let
-the user configure the panel in one interaction.
-
-#### Light topics (naming, minor UX tweak, simple yes/no)
+#### Light topics (no architectural impact, reversible in minutes, single-file scope)
 No questions needed. Just run Standard + Sonnet silently.
 
 #### Medium / Heavy topics
@@ -109,6 +105,8 @@ Adjust the "(Recommended)" label based on topic weight:
 
 #### Balanced model assignment
 
+Applies only to panelists in the current mode (Standard uses Critic + Realist only).
+
 | Panelist | Balanced mode model | Why |
 |----------|-------------------|-----|
 | **Critic** | Opus | Deep assumption-challenging needs stronger reasoning |
@@ -116,9 +114,6 @@ Adjust the "(Recommended)" label based on topic weight:
 | **Contrarian** | Opus | Building a coherent counter-argument is the hardest task |
 | **Realist** | Sonnet | Practical trade-off evaluation works well with Sonnet |
 | **Outsider** | Sonnet | Fresh-eyes simplicity check doesn't need Opus |
-
-**Why not Haiku?** Testing showed Haiku explores codebase inefficiently,
-consuming 4x more tokens than Sonnet for comparable quality — a false economy.
 
 If the user explicitly specifies mode and/or model, skip the questions.
 If the user says "just do it" or seems impatient, use the recommended defaults silently.
@@ -192,7 +187,8 @@ A one-line topic without facts/constraints produces abstract, unhelpful analysis
 
 ### Step 1.5: Information Distribution
 
-Each panelist sees a different view of the brief. Construct each view as follows:
+Each panelist sees a different view of the brief. Only construct views for
+panelists in the current mode (Standard = Critic + Realist only).
 
 | Panelist | Receives |
 |----------|----------|
@@ -221,10 +217,8 @@ beyond what is provided below — this is intentional, to avoid inheriting biase
 
 ## Cognitive framework: [FRAMEWORK]
 
-## Starting Artifact (mandatory — complete this before any findings)
+## Starting Artifact (mandatory — do not skip; findings must emerge from this exercise)
 [ARTIFACT_INSTRUCTION]
-Write this out explicitly. Do not skip it or summarize it. Your findings must emerge
-from this exercise, not precede it.
 
 ## Your information view
 [BRIEF_VIEW from Step 1.5 — the panelist-specific subset]
@@ -298,12 +292,6 @@ Within the same severity: Critic → Realist → Architect → Outsider → Cont
 
 *Panel complete. What resonates? Want to dig deeper into any point?*
 ```
-
-**Severity definitions:**
-- **CRITICAL**: Blocks progress or causes failure if ignored
-- **HIGH**: Significant risk or missed opportunity
-- **MEDIUM**: Worth considering but not urgent
-- **LOW**: Minor improvement or nitpick
 
 For **Discoveries**: only include genuinely new insights. If panelists simply
 restated known concerns, write "None — panelists reinforced existing concerns

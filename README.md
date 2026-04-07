@@ -124,7 +124,6 @@ Each panelist receives a **different view** of the same facts:
 | Outsider | **Topic and stakes ONLY** (intentional blank slate) |
 | Contrarian | All facts + user's argument placed prominently |
 
-This means even with the same model, panelists analyze from genuinely different starting points.
 
 ## Output Format
 
@@ -153,34 +152,12 @@ Severity definitions:
 
 ## How It Works
 
-```
-1. Context Extraction
-   Facts are categorized: technical constraints, business constraints,
-   user behavior, and implicit assumptions. The user's reasoning is
-   preserved as an attackable target, not stripped away.
-
-2. Information Distribution
-   Each panelist receives a DIFFERENT view of the facts.
-   Outsider gets only topic + stakes (blank slate).
-   Contrarian gets the user's argument front and center.
-
-3. Starting Artifact
-   Before analyzing, each panelist completes a mandatory thinking
-   exercise (failure scenarios, cost estimates, dependency maps, etc.)
-   Their findings must emerge FROM this exercise.
-
-4. Deep Reasoning
-   Each panelist develops their key finding in 150-200 words,
-   following the logic step by step. No jumping to conclusions.
-
-5. Synthesis + Collision Analysis
-   Results are compiled, then contradictions between panelists are
-   examined: "If both are right, what third conclusion follows?"
-   Emergent insights live at these intersections.
-
-6. Facilitation
-   You decide which points to act on. The panel informs, not dictates.
-```
+1. **Context Extraction** — Facts categorized (technical, business, user behavior, implicit assumptions). User's reasoning preserved as attackable target.
+2. **Differentiated Input** — Each panelist gets a different view. Outsider sees topic + stakes only.
+3. **Starting Artifact** — Mandatory thinking exercise (failure scenarios, cost estimates, dependency maps) before any findings.
+4. **Deep Reasoning** — 150-200 word reasoning chain per panelist. No jumping to conclusions.
+5. **Synthesis + Collision Analysis** — Contradictions examined: "If both are right, what third conclusion follows?"
+6. **Facilitation** — You decide what to act on.
 
 ## Examples
 
@@ -211,7 +188,7 @@ Severity definitions:
 | `--ctx` | Force codebase exploration (default ON for technical topics) |
 | `--no-ctx` | Explicitly disable codebase exploration |
 
-For technical topics (code, architecture, bugs), `--ctx` is **ON by default** — panelists will explore your codebase before analyzing, with role-specific exploration targets (Critic reads tests, Architect reads schemas, etc.).
+For technical topics (code, architecture, bugs), `--ctx` is **ON by default**. For non-technical topics (process, priorities, UX direction), it's OFF. Panelists explore with role-specific targets (Critic reads tests, Architect reads schemas, etc.).
 
 ## Honest Framing
 
