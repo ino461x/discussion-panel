@@ -11,7 +11,7 @@ description: >
   "should we X or Y?" dilemma — both technical and non-technical.
 ---
 
-<!-- This is a copy of discussion/SKILL.md with name: panel. Always edit discussion/SKILL.md first, then copy here. -->
+<!-- English version. This is a copy of en/discussion/SKILL.md with name: panel. Always edit en/discussion/SKILL.md first, then copy here. -->
 
 # Discussion — Multi-Perspective Analysis Panel
 
@@ -58,40 +58,40 @@ based on topic weight (Medium → Full + Balanced, Heavy → Max + All Opus).
 {
   "questions": [
     {
-      "question": "パネルの規模を選んでください。",
+      "question": "Choose the panel scale.",
       "header": "Scale",
       "multiSelect": false,
       "options": [
         {
           "label": "Standard",
-          "description": "2視点 (Critic, Realist)。軽い確認向き"
+          "description": "2 perspectives (Critic, Realist). Good for quick checks"
         },
         {
           "label": "Full (Recommended)",
-          "description": "4視点 (+ Architect, Outsider)。設計判断に最適"
+          "description": "4 perspectives (+ Architect, Outsider). Best for design decisions"
         },
         {
           "label": "Max",
-          "description": "5視点 (+ Contrarian)。重大な意思決定向き"
+          "description": "5 perspectives (+ Contrarian). For critical decisions"
         }
       ]
     },
     {
-      "question": "パネリストのモデルを選んでください。",
+      "question": "Choose the panelist model.",
       "header": "Model",
       "multiSelect": false,
       "options": [
         {
           "label": "All Sonnet",
-          "description": "全員 Sonnet。高速・低コスト"
+          "description": "All Sonnet. Fast and low-cost"
         },
         {
           "label": "Balanced (Recommended)",
-          "description": "重要パネリストが Opus、他は Sonnet (コスパ最良)"
+          "description": "Key panelists use Opus, others Sonnet (best cost/quality)"
         },
         {
           "label": "All Opus",
-          "description": "全員 Opus。最高精度だがコスト大"
+          "description": "All Opus. Highest quality but expensive"
         }
       ]
     }

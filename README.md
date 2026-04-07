@@ -1,3 +1,5 @@
+<p align="right"><strong>English</strong> | <a href="README.ja.md">日本語</a></p>
+
 <p align="center">
   <img src="assets/banner.png" alt="Discussion Panel" width="600">
 </p>
@@ -53,9 +55,11 @@ Copy the skill directories into your project's `.claude/skills/` folder:
 ```bash
 # From your project root
 mkdir -p .claude/skills
-cp -r discussion-panel/skills/discussion .claude/skills/
-cp -r discussion-panel/skills/panel .claude/skills/
+cp -r discussion-panel/skills/en/discussion .claude/skills/
+cp -r discussion-panel/skills/en/panel .claude/skills/
 ```
+
+> **Japanese version:** `cp -r discussion-panel/skills/ja/discussion .claude/skills/` (and `/panel`)
 
 Both `/discussion` and `/panel` invoke the same skill — `panel` is simply a shorter alias for convenience.
 
@@ -63,8 +67,8 @@ Both `/discussion` and `/panel` invoke the same skill — `panel` is simply a sh
 
 ```bash
 cd discussion-panel && git pull
-cp -r skills/discussion /path/to/your/project/.claude/skills/
-cp -r skills/panel /path/to/your/project/.claude/skills/
+cp -r skills/en/discussion /path/to/your/project/.claude/skills/
+cp -r skills/en/panel /path/to/your/project/.claude/skills/
 ```
 
 ## Usage
