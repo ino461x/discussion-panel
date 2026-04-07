@@ -36,8 +36,14 @@ inertia and structured roles force examination of angles the main conversation m
 /discussion [topic]                Standard (2 panelists)
 /discussion full [topic]           Full panel (4 panelists)
 /discussion extrafull [topic]      MAX panel (5 panelists)
-/discussion [topic] --ctx          Allow codebase exploration
+/discussion [topic] --ctx          Force codebase exploration (default ON for technical topics)
+/discussion [topic] --no-ctx       Explicitly disable codebase exploration
 ```
+
+**`--ctx` default behavior:**
+- Technical topics (code, architecture, bugs, refactoring): `--ctx` is ON by default
+- Non-technical topics (process, priorities, UX direction): `--ctx` is OFF by default
+- The main agent decides which category applies; user can override with `--ctx` / `--no-ctx`
 
 **Mode can also be combined:** `/discussion full [topic] --ctx`
 
@@ -103,9 +109,6 @@ Adjust the "(Recommended)" label based on topic weight:
 
 #### Balanced model assignment
 
-In Balanced mode, panelists with deeper analytical roles get Opus,
-practical/fresh-perspective roles get Sonnet:
-
 | Panelist | Balanced mode model | Why |
 |----------|-------------------|-----|
 | **Critic** | Opus | Deep assumption-challenging needs stronger reasoning |
@@ -122,109 +125,144 @@ If the user says "just do it" or seems impatient, use the recommended defaults s
 
 ## Panelist Roster
 
+Each panelist has a cognitive framework and a Starting Artifact — a mandatory thinking
+exercise they must complete before producing findings. This forces genuine divergence
+from the same underlying model.
+
 ### Standard mode — 2 panelists:
 
-| Role | What they focus on |
-|------|-------------------|
-| **Critic** | Flawed assumptions, missing risks, alternative framings, what could go wrong |
-| **Realist** | Implementation cost, maintenance burden, simpler alternatives, "is this worth it?" |
+| Role | Focus | Cognitive Framework | Starting Artifact |
+|------|-------|---------------------|-------------------|
+| **Critic** | Flawed assumptions, missing risks, alternative framings, what could go wrong | Pre-mortem + 5 Whys | Write 3 failure scenarios first. Use those as the entry point for analysis. |
+| **Realist** | Implementation cost, maintenance burden, simpler alternatives, "is this worth it?" | Cost-benefit with concrete estimation | Estimate implementation cost in person-days first, broken down by phase. |
 
 ### Full mode — 4 panelists (adds):
 
-| Role | What they focus on |
-|------|-------------------|
-| **Architect** | Root causes, systemic effects, long-term consequences, design coherence |
-| **Outsider** | Unnecessary complexity, confusing naming, "why not just...?" questions |
+| Role | Focus | Cognitive Framework | Starting Artifact |
+|------|-------|---------------------|-------------------|
+| **Architect** | Root causes, systemic effects, long-term consequences, design coherence, overlooked synergies and reuse opportunities | First Principles decomposition | Draw the dependency chain first. Map what depends on what before forming any opinion. |
+| **Outsider** | Unnecessary complexity, confusing naming, "why not just...?" questions | Beginner's Mind + Cross-domain analogy | Name one example from outside software that solved this same class of problem. Start from that. |
 
 ### Extrafull mode — 5 panelists (adds):
 
-| Role | What they focus on |
-|------|-------------------|
-| **Contrarian** | Constructs the strongest possible case for the OPPOSITE of the current approach. Not just pointing out flaws (that's Critic's job), but building a coherent argument for a completely different direction. "What if we did the exact opposite, and here's why it might actually be better..." |
+| Role | Focus | Cognitive Framework | Starting Artifact |
+|------|-------|---------------------|-------------------|
+| **Contrarian** | Constructs the strongest possible case for the OPPOSITE of the current approach — not just finding flaws (that's Critic's job), but building a coherent alternative direction | Steel-man inversion | Imagine a world where the current approach was never proposed. Describe what was built instead and why it was considered obviously correct. |
 
-The Contrarian is the most expensive but often the most valuable panelist.
-While Critic finds holes in the plan, Contrarian presents an alternative universe
-where the plan was never proposed and a different path was taken. This is the
-"steelman the opposition" role — it forces genuine consideration of roads not taken.
+The Contrarian is the most expensive but often the most valuable panelist — it forces
+genuine consideration of roads not taken, not just critique of the road chosen.
 
 ## Execution Flow
 
 ### Step 1: Context Extraction
 
 Before spawning panelists, distill the topic into a structured brief.
-Raw conversation carries bias; zero context produces irrelevant analysis.
-The middle ground: **facts only, no opinions.**
+The brief has four fact categories plus user argument and prior attempts.
+Extract each category separately — panelists will receive different views of this data.
 
-Extract:
-- **Topic**: The specific question or decision (1-2 sentences)
-- **Facts**: Objective constraints, requirements, technical realities (bullet list)
-- **Current approach**: What has been decided or proposed (neutral description)
-- **Stakes**: What happens if we get this wrong?
+```
+Topic:            The specific question or decision (1-2 sentences)
+Stakes:           What happens if we get this wrong?
 
-Do NOT include: opinions, justifications for the current approach, emotional framing,
-or "we already tried X" (this biases against revisiting X).
+Technical constraints:
+  - [Hard technical limits, performance requirements, platform constraints]
+  - [Concrete numbers: line counts, function counts, dependency counts, etc.]
+  - [Actual failure incidents or known bugs if relevant]
 
-**If the topic is too short or vague** (e.g., just a few words with no context),
-ask the user one clarifying question before proceeding. A one-line topic without
-facts/constraints will produce abstract, unhelpful analysis. Better to ask than
-to waste tokens on empty output.
+Business constraints:
+  - [Deadlines, budget, team size, compliance requirements]
+
+User behavior:
+  - [How end users actually interact with the system; observed patterns]
+
+Implicit assumptions:
+  - [Things being treated as true without explicit justification]
+
+User's argument:
+  - [The user's stated position and the reasoning behind it]
+  - Include this even if it seems obvious — it is the primary attack target for Critic and Contrarian.
+
+Prior attempts:
+  - Include: "We tried X and observed Y" (factual outcomes)
+  - Exclude: "X is bad / X won't work" (conclusions that would bias panelists against revisiting X)
+```
+
+**If the topic is too short or vague**, ask one clarifying question before proceeding.
+A one-line topic without facts/constraints produces abstract, unhelpful analysis.
+
+### Step 1.5: Information Distribution
+
+Each panelist sees a different view of the brief. Construct each view as follows:
+
+| Panelist | Receives |
+|----------|----------|
+| **Critic** | All categories + implicit assumptions section placed prominently at top |
+| **Realist** | All categories + technical and business constraints highlighted |
+| **Architect** | All categories + technical constraints + dependency/structural information highlighted |
+| **Outsider** | Topic and stakes ONLY — no constraints, no user argument, no prior attempts (intentional blank slate) |
+| **Contrarian** | All categories + user's argument placed prominently at top |
 
 ### Step 2: Spawn Panelists
 
 Launch all panelists **in parallel** using the Agent tool in a single message.
 Set the `model` parameter on each Agent call according to the confirmed configuration.
 
-Use the panelist prompt template below for each, substituting the role and brief.
+Use the panelist prompt template below for each, substituting `[ROLE]`, `[FRAMEWORK]`,
+`[ARTIFACT_INSTRUCTION]`, and `[BRIEF_VIEW]` from the roster and Step 1.5.
 
-### Panelist Prompt Template
+#### Panelist Prompt Template
 
 ```
-You are the [ROLE] on a review panel. Your job is to analyze a topic from your
-specific perspective. You have NO prior context about this project beyond what
-is provided below — this is intentional, to avoid inheriting biases from an
-ongoing conversation.
+You are the [ROLE] on a review panel. You have NO prior context about this project
+beyond what is provided below — this is intentional, to avoid inheriting biases.
 
 ## Your perspective: [ROLE]
-[One sentence from the roster table above]
+[Focus sentence from the roster table]
 
-## Topic
-[From Step 1]
+## Cognitive framework: [FRAMEWORK]
 
-## Known facts and constraints
-[From Step 1]
+## Starting Artifact (mandatory — complete this before any findings)
+[ARTIFACT_INSTRUCTION]
+Write this out explicitly. Do not skip it or summarize it. Your findings must emerge
+from this exercise, not precede it.
 
-## Current approach being considered
-[From Step 1]
+## Your information view
+[BRIEF_VIEW from Step 1.5 — the panelist-specific subset]
 
-## Stakes
-[From Step 1]
+## Output format
+1. **Starting Artifact** — complete the exercise above, written out in full
+2. **Reasoning chain** — your most important finding developed in 150-200 words.
+   Follow the logic step by step. Do not jump to conclusions.
+3. **Findings** — 1 to 3 findings only, each with a severity label:
+   CRITICAL = blocks progress or causes failure if ignored
+   HIGH     = significant risk or missed opportunity
+   MEDIUM   = worth considering but not urgent
+   LOW      = minor improvement or nitpick
+   Format: **[SEVERITY]** Finding text (2-4 sentences, specific and concrete)
 
-## Rules
-- Be specific and concrete. "This might cause problems" is useless.
-  "This breaks when X because Y" is useful.
-- If you'd need to see code to give a real answer, say so explicitly
-  rather than speculating.
-- Limit your response to 5 bullet points maximum. 1-2 sentences each.
-- You're not here to be contrarian for sport. If the current approach is
-  genuinely good, say so — then point out what's still worth watching.
-- Assign a severity to each finding:
-  CRITICAL = blocks progress or causes failure if ignored
-  HIGH = significant risk or missed opportunity
-  MEDIUM = worth considering but not urgent
-  LOW = minor improvement or nitpick
-  Format each point as: **[SEVERITY]** Finding text
+Rules:
+- "This might cause problems" is useless. "This breaks when X because Y" is useful.
+- If you need to see code to give a real answer, say so rather than speculating.
+- If the current approach is genuinely good, say so — then name what still warrants watching.
 - Write in the same language as the topic.
 ```
 
-**When `--ctx` is used**, add Read/Grep/Glob tools to each panelist and append:
+**When `--ctx` is active**, add Read/Grep/Glob tools to each panelist and append
+the following block, with the role-specific exploration focus substituted in:
 
 ```
-You have access to the codebase. Before giving your analysis, explore the
-relevant files to ground your opinions in actual code, not assumptions.
+You have access to the codebase. Explore before you analyze.
+
+Your exploration focus for [ROLE]:
+  Critic:      Test files, error handling, input validation
+  Realist:     Dependency files (package.json etc.), build config, CI config
+  Architect:   Data models, schemas, inter-module dependency graph
+  Outsider:    README, documentation, public API surface
+  Contrarian:  Oldest files, legacy code, TODO/FIXME comments
 ```
 
-Note: with `--ctx`, panelists may reference different files. This is a feature
-(broader coverage), not a bug, but keep it in mind when synthesizing.
+With `--ctx`, panelists may reference different files. This is a feature (broader
+coverage), not a bug, but keep it in mind when synthesizing results.
 
 ### Step 3: Present Results
 
@@ -241,17 +279,20 @@ Note: with `--ctx`, panelists may reference different files. This is a feature
 - **Tensions**: [Where panelists disagreed — state both sides. "None" if unanimous]
 - **Discoveries**: [New angles nobody in the original conversation raised]
 
+### Reasoning Highlight
+> [The single most developed reasoning chain from Step 2, quoted verbatim or lightly edited for clarity. Attribute to panelist.]
+
 ### Findings
 
 | # | Severity | Finding | Panelist |
 |---|----------|---------|----------|
 | 1 | CRITICAL | [most severe finding] | [role] |
-| 2 | HIGH | [next finding] | [role] |
-| 3 | MEDIUM | [finding] | [role] |
-| ... | ... | ... | ... |
+| 2 | HIGH     | [next finding] | [role] |
+| 3 | MEDIUM   | [finding] | [role] |
+| ... | ...   | ... | ... |
 
 Sort rows by severity (CRITICAL > HIGH > MEDIUM > LOW).
-Within the same severity, order by panelist: Critic → Realist → Architect → Outsider → Contrarian.
+Within the same severity: Critic → Realist → Architect → Outsider → Contrarian.
 
 ---
 
@@ -267,6 +308,21 @@ Within the same severity, order by panelist: Critic → Realist → Architect �
 For **Discoveries**: only include genuinely new insights. If panelists simply
 restated known concerns, write "None — panelists reinforced existing concerns
 rather than surfacing new angles." Honest framing over padding.
+
+### Step 3.5: Collision Analysis
+
+After presenting findings, scan for direct contradictions between panelists.
+For each significant contradiction, reason through it using this structure:
+
+```
+[Panelist A] said: [position A]
+[Panelist B] said: [position B]
+If both are correct simultaneously, the third conclusion is: [Z]
+```
+
+Emergent insights live at these intersections. If no genuine contradictions exist,
+write "No significant contradictions — panelists operated on compatible assumptions."
+Do not manufacture collisions. One real collision is more valuable than three invented ones.
 
 ### Step 4: Facilitate
 
@@ -293,6 +349,10 @@ The panel informs; it doesn't dictate. The USER decides.
 | Standard | 2 (Critic, Realist) | sonnet | ~3x |
 | Full | 4 (+Architect, Outsider) | sonnet (opus recommended) | ~5-6x |
 | Extrafull | 5 (+Contrarian) | opus | ~7-8x |
+
+With `--ctx` active (default for technical topics), add ~1.5-2x to the above multipliers
+due to codebase exploration. Use `--no-ctx` to suppress this on technical topics where
+exploration is not needed.
 
 Extrafull with Opus is the most expensive configuration but also the most thorough.
 Reserve it for decisions where the cost of a wrong choice far exceeds the analysis cost.
