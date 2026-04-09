@@ -60,11 +60,16 @@ Append to the template above AND pass Read/Grep/Glob tools to the panelist:
 You have access to the codebase. Explore BEFORE analyzing.
 
 [ROLE] exploration focus:
-  Critic:      Tests, error handling, input validation
-  Realist:     Dependency files, build/CI config
+  Critic:      Test files, error handling, input validation
+               Question: "Where are exceptions being swallowed? What input is not validated?"
+  Realist:     Dependency files (package.json etc.), build config, CI config
+               Question: "Where are unused dependencies? Where does build complexity hide?"
   Architect:   Data models, schemas, inter-module dependency graph
+               Question: "Which modules bypass the intended architecture?"
   Outsider:    README, docs, public API surface
-  Contrarian:  Oldest files, legacy code, TODO/FIXME
+               Question: "Where do docs promise something the code doesn't deliver?"
+  Contrarian:  Oldest files, legacy code, TODO/FIXME comments
+               Question: "Which old decisions still constrain things?"
 ```
 
 **Note**: In `--independent` mode panelists may read different files, so Collision Analysis
