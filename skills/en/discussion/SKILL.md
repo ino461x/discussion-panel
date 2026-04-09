@@ -24,439 +24,223 @@ When you work 1-on-1 with an AI, a subtle but dangerous pattern emerges:
 3. **Band-aid fixes** — surface-level patches accumulate instead of addressing root causes
 4. **Unchallenged premises** — wrong assumptions survive because nobody re-examines them
 
-This skill breaks that pattern by spawning fresh sub-agents who have no stake in the
-current conversation's conclusions. They analyze the topic independently, then you and
-the main agent review their findings together.
-
-Be honest about what this is: **structured self-review from the same underlying model,
-not truly independent experts.** It works because fresh context removes conversational
-inertia and structured roles force examination of angles the main conversation missed.
+This skill breaks the pattern by spawning fresh sub-agents with no stake in the current
+conversation's conclusions. Be honest about what this is: **structured self-review from the
+same underlying model, not truly independent experts.** It works because fresh context removes
+conversational inertia, and structured roles force examination of angles the main conversation missed.
 
 ## Invocation
 
 ```
-/discussion [topic]                Standard (2 panelists)
-/discussion full [topic]           Full panel (4 panelists)
-/discussion max [topic]      MAX panel (5 panelists)
-/discussion [topic] --ctx          Force codebase exploration (default ON for technical topics)
-/discussion [topic] --no-ctx       Explicitly disable codebase exploration
+/discussion [topic]                 Standard (2 panelists)
+/discussion full [topic]            Full panel (4 panelists)
+/discussion max [topic]             MAX panel (5 panelists)
+/discussion [topic] --independent   Give panelists Read/Grep tools (former --ctx; usually discouraged)
 ```
 
-`--ctx` default: ON for technical topics (code, architecture, bugs), OFF for non-technical.
-User can override with `--ctx` / `--no-ctx`.
+**Key design change**: This skill abolishes the old "each panelist explores with Read/Grep
+independently" approach. By default, the orchestrator explores ONCE and builds a
+**Shared Context Pack** that is distributed to all panelists. Benefits:
+- 5-way duplicated exploration collapses to 1 pass (60-80% token reduction)
+- All panelists see the same code, so Collision Analysis produces clean "viewpoint clashes"
+- Fewer factual errors, lighter Findings Validation
 
-If invoked **without a mode specifier**, assess the topic's weight:
+`--independent` restores the old per-panelist exploration mode, but Shared Context is usually sufficient.
 
-#### Light topics (no architectural impact, reversible in minutes, single-file scope)
-No questions needed. Just run Standard + Sonnet silently.
+## Mode selection
 
-#### Medium / Heavy topics
-Present both questions together using AskUserQuestion. Set the recommended option
-based on topic weight (Medium → Full + Balanced, Heavy → Max + All Opus).
+When invoked without an explicit mode, evaluate topic weight:
+
+- **Lightweight topic** (no architectural impact, easy rollback, single file): Run Standard + Sonnet silently
+- **Medium / Heavy**: Use AskUserQuestion to confirm scale AND model in a single prompt
+
+Recommend Full + Balanced for medium, Max + Balanced for heavy topics.
+
+**Important**: Max mode defaults to **Balanced** (NOT All Opus). All Opus is an explicit opt-in.
+Realist and Outsider have been empirically shown to produce sufficient quality on Sonnet —
+Opus is overkill for them.
 
 ```json
 {
   "questions": [
     {
-      "question": "Choose the panel scale.",
+      "question": "Choose panel scale.",
       "header": "Scale",
       "multiSelect": false,
       "options": [
-        {
-          "label": "Standard",
-          "description": "2 perspectives (Critic, Realist). Good for quick checks"
-        },
-        {
-          "label": "Full (Recommended)",
-          "description": "4 perspectives (+ Architect, Outsider). Best for design decisions"
-        },
-        {
-          "label": "Max",
-          "description": "5 perspectives (+ Contrarian). For critical decisions"
-        }
+        {"label": "Standard", "description": "2 perspectives (Critic, Realist)"},
+        {"label": "Full", "description": "4 perspectives (+ Architect, Outsider)"},
+        {"label": "Max", "description": "5 perspectives (+ Contrarian)"}
       ]
     },
     {
-      "question": "Choose the panelist model.",
+      "question": "Choose panelist model.",
       "header": "Model",
       "multiSelect": false,
       "options": [
-        {
-          "label": "All Sonnet",
-          "description": "All Sonnet. Fast and low-cost"
-        },
-        {
-          "label": "Balanced (Recommended)",
-          "description": "Key panelists use Opus, others Sonnet (best cost/quality)"
-        },
-        {
-          "label": "All Opus",
-          "description": "All Opus. Highest quality but expensive"
-        }
+        {"label": "All Sonnet", "description": "All panelists on Sonnet. Fast and cheap"},
+        {"label": "Balanced (Recommended)", "description": "Critic/Architect/Contrarian=Opus, others=Sonnet"},
+        {"label": "All Opus", "description": "All panelists on Opus. Highest accuracy but costly"}
       ]
     }
   ]
 }
 ```
 
-Adjust the "(Recommended)" label based on topic weight:
-- **Medium**: Full + Balanced recommended
-- **Heavy**: Max + All Opus recommended
+Skip the prompt and use defaults (Balanced) if the user explicitly specified mode/model,
+said "just do it", or is in a hurry.
 
-#### Balanced model assignment
+### Balanced model assignment
 
-Applies only to panelists in the current mode (Standard uses Critic + Realist only).
+| Panelist   | Model  | Reason |
+|------------|--------|--------|
+| Critic     | Opus   | Deep assumption challenge benefits from stronger reasoning |
+| Architect  | Opus   | Systematic analysis rewards deeper insight |
+| Contrarian | Opus   | Constructing a coherent counter-argument is the hardest task |
+| Realist    | Sonnet | Practical trade-off evaluation works well on Sonnet |
+| Outsider   | Sonnet | Beginner-mind analysis does not need Opus |
 
-| Panelist | Balanced mode model | Why |
-|----------|-------------------|-----|
-| **Critic** | Opus | Deep assumption-challenging needs stronger reasoning |
-| **Architect** | Opus | Structural/systemic analysis benefits from depth |
-| **Contrarian** | Opus | Building a coherent counter-argument is the hardest task |
-| **Realist** | Sonnet | Practical trade-off evaluation works well with Sonnet |
-| **Outsider** | Sonnet | Fresh-eyes simplicity check doesn't need Opus |
+## Panelist roster
 
-If the user explicitly specifies mode and/or model, skip the questions.
-If the user says "just do it" or seems impatient, use the recommended defaults silently.
+Each panelist has a cognitive framework and a Starting Artifact. Starting Artifacts are
+**executed internally as thinking scaffolds** (they are NOT emitted in output). This produces
+diversity from a single base model.
 
-## Panelist Roster
+| Role | Focus | Framework | Starting Artifact (internal) |
+|------|-------|-----------|-----------------------------|
+| **Critic** | Flawed assumptions, missed risks, what could break | Pre-mortem + 5 Whys | Imagine 3 failure scenarios |
+| **Realist** | Implementation cost, maintenance burden, simpler alternatives | Concrete estimates | Estimate per-phase person-days |
+| **Architect** | Root causes, systemic impact, long-term consequences | First-principles decomposition | Trace dependency chains |
+| **Outsider** | Unnecessary complexity, unclear naming, beginner perspective | Beginner eyes + cross-domain analogy | Find a parallel in a non-software field |
+| **Contrarian** | Strongest argument for the exact opposite approach | Steelman inversion | Imagine a world where the current approach was never proposed |
 
-Each panelist has a cognitive framework and a Starting Artifact — a mandatory thinking
-exercise they must complete before producing findings. This forces genuine divergence
-from the same underlying model.
+Standard = Critic + Realist / Full = + Architect, Outsider / Max = + Contrarian
 
-### Standard mode — 2 panelists:
+## Execution flow
 
-| Role | Focus | Cognitive Framework | Starting Artifact |
-|------|-------|---------------------|-------------------|
-| **Critic** | Flawed assumptions, missing risks, alternative framings, what could go wrong | Pre-mortem + 5 Whys | Write 3 failure scenarios first. Use those as the entry point for analysis. |
-| **Realist** | Implementation cost, maintenance burden, simpler alternatives, "is this worth it?" | Cost-benefit with concrete estimation | Estimate implementation cost in person-days first, broken down by phase. |
+### Step 1: Brief extraction
 
-### Full mode — 4 panelists (adds):
+Condense the topic into a structured brief. See `references/brief-format.md` for the full
+category list and format. Key points:
+- Topic (1-2 sentences) + Stakes
+- Extract only the categories relevant to the topic (focus on technical constraints for
+  technical topics; include business categories only when they matter)
+- Always include user's position and past attempts (primary attack surface for Critic/Contrarian)
 
-| Role | Focus | Cognitive Framework | Starting Artifact |
-|------|-------|---------------------|-------------------|
-| **Architect** | Root causes, systemic effects, long-term consequences, design coherence, overlooked synergies and reuse opportunities | First Principles decomposition | Draw the dependency chain first. Map what depends on what before forming any opinion. |
-| **Outsider** | Unnecessary complexity, confusing naming, "why not just...?" questions | Beginner's Mind + Cross-domain analogy | Name one example from outside software that solved this same class of problem. Start from that. |
+If the topic is vague, ask ONE clarifying question before proceeding.
 
-### Max mode — 5 panelists (adds):
+### Step 2: Shared Context Pack (technical topics only)
 
-| Role | Focus | Cognitive Framework | Starting Artifact |
-|------|-------|---------------------|-------------------|
-| **Contrarian** | Constructs the strongest possible case for the OPPOSITE of the current approach — not just finding flaws (that's Critic's job), but building a coherent alternative direction | Steel-man inversion | Imagine a world where the current approach was never proposed. Describe what was built instead and why it was considered obviously correct. |
+The orchestrator uses Read/Grep/Glob ONCE to collect code material relevant to the topic.
+See `references/context-pack.md` for details. Key points:
+- Gather raw snippets with file paths and line numbers
+- Add no interpretation or evaluation (raw material only)
+- Target 3-5k tokens total
+- Skip entirely for non-technical topics
 
-The Contrarian is the most expensive but often the most valuable panelist — it forces
-genuine consideration of roads not taken, not just critique of the road chosen.
+The Pack is distributed to all panelists EXCEPT the Outsider. **The Outsider stays on a
+deliberate blank slate — no Pack is given.**
 
-## Execution Flow
+### Step 3: Information distribution and Artifact parameterization
 
-### Step 1: Context Extraction
+Each panelist receives a different view of the brief. See
+`references/information-distribution.md` for the full distribution rules and dynamic
+Artifact parameterization. Key points:
+- Critic: full brief + implicit assumptions highlighted
+- Realist: full brief + tech/business constraints emphasized
+- Architect: full brief + dependency info
+- Outsider: topic and stakes only (blank slate; no Pack)
+- Contrarian: full brief + user's position highlighted
 
-Before spawning panelists, distill the topic into a structured brief.
-The brief has four fact categories plus user argument and prior attempts.
-Extract each category separately — panelists will receive different views of this data.
+### Step 4: Parallel panelist launch
 
-```
-Topic:            The specific question or decision (1-2 sentences)
-Stakes:           What happens if we get this wrong?
+Launch all panelists in parallel via the Agent tool (multiple Agent calls in ONE message).
+Set the `model` parameter on each Agent call.
 
-Technical constraints:
-  - [Hard technical limits, performance requirements, platform constraints]
-  - [Concrete numbers: line counts, function counts, dependency counts, etc.]
-  - [Actual failure incidents or known bugs if relevant]
+**Panelists receive NO tools** — no Read/Grep/Glob. They analyze using only the Pack and
+brief. Only under `--independent` are Read/Grep/Glob passed.
 
-Business constraints:
-  - [Deadlines, budget, team size, compliance requirements]
+See `references/panelist-prompt.md` for the full prompt template. Key points:
+- Starting Artifact is **executed internally** (scaffold only, not emitted)
+- Output is 1-2 Findings, each with severity label and 2-3 sentence rationale
+- Reasoning chain output is abolished (folded into the Findings rationale)
+- CRITICAL / HIGH / MEDIUM / LOW severity labels are required
 
-User behavior:
-  - [How end users actually interact with the system; observed patterns]
+### Step 5: Collision Analysis (Full / Max only)
 
-Implicit assumptions:
-  - [Things being treated as true without explicit justification]
+Skipped in Standard mode (just compare the two Findings inline).
 
-User's argument:
-  - [The user's stated position and the reasoning behind it]
-  - Include this even if it seems obvious — it is the primary attack target for Critic and Contrarian.
+For Full/Max: launch a dedicated sub-agent (no conversation history). Pass each panelist's
+Findings along with a 2-3 line summary of each panelist's Starting Artifact extracted by the
+orchestrator. See `references/collision-analyst.md` for the full prompt.
 
-Prior attempts:
-  - Include: "We tried X and observed Y" (factual outcomes)
-  - Exclude: "X is bad / X won't work" (conclusions that would bias panelists against revisiting X)
-```
-
-**If the topic is too short or vague**, ask one clarifying question before proceeding.
-A one-line topic without facts/constraints produces abstract, unhelpful analysis.
-
-### Step 1.5: Information Distribution
-
-Each panelist sees a different view of the brief. Only construct views for
-panelists in the current mode (Standard = Critic + Realist only).
-
-| Panelist | Receives |
-|----------|----------|
-| **Critic** | All categories + implicit assumptions prominently at top. Also add: "List 3 questions this brief does NOT address — what's conspicuously absent?" |
-| **Realist** | All categories + technical and business constraints highlighted |
-| **Architect** | All categories + technical constraints + dependency/structural information highlighted |
-| **Outsider** | Topic and stakes ONLY — no constraints, no user argument, no prior attempts (intentional blank slate) |
-| **Contrarian** | All categories + user's argument placed prominently at top |
+The Collision Analyst's job:
+1. Identify contradictions between panelists → propose a third conclusion
+2. Check for shared blind spots in consensus → build a dissenter's argument
 
-**Outsider information hygiene**: Strip implementation-specific terms (function names,
-file paths, library names) from the Outsider's Stakes description. Write Stakes in
-business/user-impact language only. For non-technical topics, omit Stakes entirely
-and give Outsider the Topic sentence only.
-
-#### Step 1.5b: Dynamic Artifact Parameterization
-
-Before spawning panelists, inject topic-specific context from Step 1 into each
-role's Starting Artifact instruction (from the Panelist Roster tables above). Append the relevant element: Critic gets a specific
-implicit assumption to attack, Realist gets the specific approach to estimate,
-Architect gets the key component to map from, Contrarian gets the user's stated approach
-to invert. Outsider receives no injection (preserve blank-slate).
-
-Fallback: if multiple candidates exist, prefer the most specific. Defaults:
-Critic → first implicit assumption, Realist → the approach's costliest phase,
-Architect → the component with most dependencies, Contrarian → user's core claim.
-
-### Step 2: Spawn Panelists
-
-Launch all panelists **in parallel** using the Agent tool in a single message.
-Set the `model` parameter on each Agent call according to the confirmed configuration.
-
-Use the panelist prompt template below for each, substituting `[ROLE]`, `[FRAMEWORK]`,
-`[ARTIFACT_INSTRUCTION]`, and `[BRIEF_VIEW]` from the roster and Step 1.5.
-
-#### Panelist Prompt Template
-
-```
-You are the [ROLE] on a review panel. You have NO prior context about this project
-beyond what is provided below — this is intentional, to avoid inheriting biases.
-
-## Your perspective: [ROLE]
-[Focus sentence from the roster table]
-
-## Cognitive framework: [FRAMEWORK]
-
-## Starting Artifact (mandatory — do not skip; findings must emerge from this exercise)
-[ARTIFACT_INSTRUCTION]
-Then: identify one non-obvious implication from what you just wrote.
-
-## Your information view
-[BRIEF_VIEW from Step 1.5 — the panelist-specific subset]
-
-## Output format
-1. **Starting Artifact** — complete the exercise above, written out in full
-2. **Reasoning chain** — your most important finding developed in 150-200 words.
-   Must emerge from your Starting Artifact. Begin with "From [name a specific element —
-   e.g., failure scenario 2, the hidden dependency you mapped, the Phase 3 cost estimate]..."
-   to anchor reasoning in the exercise, not general pattern-matching.
-3. **Findings** — 1 to 3 findings only, each with a severity label:
-   CRITICAL = blocks progress or causes failure if ignored
-   HIGH     = significant risk or missed opportunity
-   MEDIUM   = worth considering but not urgent
-   LOW      = minor improvement or nitpick
-   Format: **[SEVERITY]** Finding text (2-4 sentences, specific and concrete)
-
-Rules:
-- "This might cause problems" is useless. "This breaks when X because Y" is useful.
-- If you need to see code to give a real answer, say so rather than speculating.
-- If the current approach is genuinely good, say so — then name what still warrants watching.
-- At one point in your reasoning, name what would have to be true for your
-  conclusion to be wrong — then decide if it changes anything.
-- Before writing your Reasoning chain, identify which ONE of the above constraints
-  matters most for this specific topic. Invest your deepest analysis there.
-  Satisfy the others, but not at the expense of depth on your primary constraint.
-- Write in the same language as the topic.
-```
-
-**When `--ctx` is active**, add Read/Grep/Glob tools to each panelist and append
-the following block, with the role-specific exploration focus substituted in:
-
-```
-You have access to the codebase. Explore before you analyze.
-
-Your exploration focus for [ROLE]:
-  Critic:      Test files, error handling, input validation
-               Ask: "Where are exceptions silenced? What inputs go unvalidated?"
-  Realist:     Dependency files (package.json etc.), build config, CI config
-               Ask: "What dependencies are unused? Where is build complexity hiding?"
-  Architect:   Data models, schemas, inter-module dependency graph
-               Ask: "Where do modules bypass the intended architecture? What's coupled that shouldn't be?"
-  Outsider:    README, documentation, public API surface
-               Ask: "Where does the docs promise something the code doesn't deliver?"
-  Contrarian:  Oldest files, legacy code, TODO/FIXME comments
-               Ask: "What old decisions still constrain us? Which TODOs reveal abandoned better paths?"
-```
-
-With `--ctx`, panelists may reference different files. This is a feature (broader
-coverage), not a bug, but keep it in mind when synthesizing results.
-
-### Step 3: Present Results
-
-**Summary comes FIRST** — most users read only this.
+### Step 6: Findings Validation (Full / Max only)
 
-```markdown
----
-
-## Discussion Panel: [Topic in ~10 words]
-*Mode: [standard/full/max] | Panelists: [N]*
-
-### Summary
-- **Consensus**: [Points all panelists agreed on]
-- **Tensions**: [Where panelists disagreed — state both sides. "None" if unanimous]
-- **Discoveries**: [New angles nobody in the original conversation raised]
-
-### Reasoning Highlight
-> [The single most developed reasoning chain from Step 2, quoted verbatim or lightly edited for clarity. Attribute to panelist.]
-
-### Findings
-
-| # | Severity | Finding | Panelist |
-|---|----------|---------|----------|
-| 1 | CRITICAL | [most severe finding] | [role] |
-| 2 | HIGH     | [next finding] | [role] |
-| 3 | MEDIUM   | [finding] | [role] |
-| ... | ...   | ... | ... |
-
-Sort rows by severity (CRITICAL > HIGH > MEDIUM > LOW).
-Within the same severity: Critic → Realist → Architect → Outsider → Contrarian.
-
-### Collision Analysis
-[Results from Step 3.5 sub-agent — omit this section for Standard mode]
-
-### Findings Validation
-[Results from Step 3.7 — omit for Standard mode]
+The orchestrator (not a sub-agent) validates each finding. With Shared Context Pack in place,
+factual errors should be greatly reduced, but still confirm:
+1. Does the finding correctly reference actual design/code?
+2. Is it already handled (a design element the panelist wasn't aware of)?
+3. Does it contradict something the panel itself said?
 
-| # | Finding | Rating | Rationale |
-|---|---------|--------|-----------|
-| 1 | [finding summary] | ◎/○/△/✕ | [1-sentence reason] |
-| ... | ... | ... | ... |
+Ratings: ◎ (accurate) / ○ (valid but limited) / △ (partially correct) / ✕ (factual error)
 
----
+### Step 7: Result presentation
 
-*Panel complete. What resonates? Want to dig deeper into any point?*
-```
+**Summary first** — most users only read this part.
+See `references/output-format.md` for the format. Key points:
+- Summary: Agreement / Tension / Discovery
+- Findings table (sorted by severity)
+- Collision Analysis (Full/Max only)
+- Findings Validation (Full/Max only)
 
-For **Discoveries**: only include genuinely new insights. If panelists simply
-restated known concerns, write "None — panelists reinforced existing concerns
-rather than surfacing new angles." Honest framing over padding.
+On **Discovery**: include only truly new insights. If panelists merely reinforced known
+concerns, write honestly: "None — the panel reinforced existing concerns rather than
+surfacing new angles." Honest framing over padding.
 
-### Step 3.5: Collision Analysis
+### Step 8: Facilitation
 
-**Full and Max modes only.** For Standard mode (2 panelists), skip the dedicated
-sub-agent — briefly note any tension between the two reasoning chains inline.
+- Do NOT immediately adopt or reject suggestions
+- Ask what resonated
+- Dig deeper on any point, or launch a focused follow-up panel
 
-For Full/Max: spawn a **dedicated sub-agent** (fresh context, no conversation history).
-Pass it the Reasoning Chains AND a 2-3 line summary of each Starting Artifact
-(but NOT their Findings). Artifact summaries enable premise-level collision detection
-while still preventing "solving the mystery after knowing the answer."
-
-Agent prompt:
-```
-You are the Collision Analyst. You receive the reasoning chains and artifact summaries
-from a review panel. You have NOT seen their conclusions.
-
-## Topic under review
-[Topic from Step 1]
-
-## Starting Artifact summaries
-[Insert a 2-3 line summary of each panelist's Starting Artifact, labeled by role.
- Capture the core premise/framing, not the full exercise output.]
-
-## Reasoning chains
-[Insert each panelist's Reasoning Chain, labeled by role — e.g., **Critic:** ...]
-
-Note: Each panelist's reasoning may contain an internal self-challenge
-(a "what if I'm wrong" moment). Do not treat these as contradictions
-between panelists — they are within-panelist dialectic, not between-panelist conflict.
-
-## Your task
-1. Identify contradictions or tensions between the reasoning chains.
-2. For each: "If both lines of reasoning are correct, the third conclusion is: [Z]"
-3. **Anti-consensus check**: If all panelists agree on a point, evaluate whether
-   that agreement could be a shared blind spot. Ask: "What would a dissenter argue?"
-   If you can construct a credible dissent, flag it as a consensus risk.
-4. If no genuine contradictions or suspicious consensus exist, say so honestly.
-
-Format:
-- Collisions: **[Role A] vs [Role B]**: [contradiction]. Third conclusion: [Z].
-- Consensus risks: **Shared assumption**: [what they all assumed]. Possible dissent: [argument].
-Output 1-3 collision results and 0-2 consensus risks. Do not manufacture either.
-```
-
-Include the Collision Analysis results in the Step 3 output after the Findings table.
-
-### Step 3.7: Findings Validation (Full and Max modes only)
-
-After Collision Analysis, the **orchestrator** (not a sub-agent) validates each finding
-against the actual context. Only the orchestrator has full conversation history and
-codebase access — panelists operated with limited views and may have factual errors.
-
-For each finding, check:
-
-1. **Factual accuracy** — Does the finding correctly reference the actual design/code?
-   Panelists with `--ctx` may read stale or wrong files; Outsider has minimal context by design.
-2. **Already addressed** — Is the concern already handled by an existing design element
-   that the panelist couldn't see? (e.g., Outsider won't know about Information Distribution)
-3. **Empirical evidence** — Does the panel's own output provide evidence for or against?
-   (e.g., if all panelists maintained Falsifiability, a claim that "Falsifiability drops out
-   under word pressure" is contradicted by the panel's own run.)
-
-Rate each finding:
-
-| Rating | Meaning |
-|--------|---------|
-| ◎ | Accurate and actionable |
-| ○ | Valid but limited in scope or severity |
-| △ | Partially correct — pattern is real but specifics are wrong |
-| ✕ | Factual error, already addressed by existing design, or contradicted by evidence |
-
-Present the validation table in the Step 3 output after Collision Analysis.
-This ensures users don't waste effort acting on findings based on incorrect premises.
-
-### Step 4: Facilitate
-
-After presenting results:
-
-- Do NOT immediately adopt the panelists' suggestions
-- Do NOT dismiss them either
-- Ask the user which points resonate and which don't
-- If the user wants to explore a point, discuss it or spawn a focused follow-up
-
-The panel informs; it doesn't dictate. The USER decides.
-
-### Step 5: Implementation Pipeline (optional)
-
-If the user wants to act on findings (typically ≥2 accepted findings), offer a
-two-agent workflow. Note: this adds significant token cost (Opus generation + review).
-
-1. **Generator** (Opus — needs deepest reasoning for faithful implementation) —
-   accepted findings as numbered checklist + file paths. Implement all, add nothing extra.
-2. **Reviewer** — same checklist. Verify each item: PASS/FAIL with line references.
-3. Present review results. Fix any FAILs before closing.
+The panel informs. It does not instruct. The user decides.
 
 ## When NOT to use
 
-- Simple factual questions with clear answers
-- The user explicitly wants execution, not deliberation
-- Rapid iteration loops where speed matters more than reflection
-- Trivial decisions where the cost of being wrong is negligible
+- Simple factual questions with a clear answer
+- User wants action, not debate
+- Rapid iteration loops where speed matters more than rigor
+- Trivial decisions where being wrong costs nothing
 
 ## Cost awareness
 
 | Mode | Panelists | Default model | Approx. token multiplier |
-|------|-----------|---------------|-------------------------|
-| Standard | 2 (Critic, Realist) | sonnet | ~3x (~4x with Balanced) |
-| Full | 4 (+Architect, Outsider) | sonnet (opus recommended) | ~5-6x (~7x with Balanced) |
-| Max | 5 (+Contrarian) | opus (Balanced = default) | ~7-8x |
+|------|-----------|---------------|--------------------------|
+| Standard | 2 | Sonnet | ~2-3× |
+| Full | 4 | Balanced | ~3-4× |
+| Max | 5 | Balanced | ~4-5× |
 
-With `--ctx` active (default for technical topics), add ~1.5-2x to the above multipliers
-due to codebase exploration. Use `--no-ctx` to suppress this on technical topics where
-exploration is not needed.
+The old per-panelist exploration mode added ~1.5-2× on top. Shared Context Pack eliminates
+that duplication. Only `--independent` restores the old cost profile.
 
-Max with Opus is the most expensive configuration but also the most thorough.
-Reserve it for decisions where the cost of a wrong choice far exceeds the analysis cost.
+All Opus is about 1.5× Balanced. Use only for critical decisions where the cost of being
+wrong vastly exceeds the analysis cost.
 
-**Model selection rationale (from empirical testing):**
-- **Haiku**: Not recommended. Explores codebase inefficiently, consuming 4x more
-  tokens than Sonnet for comparable or lower quality output.
-- **Sonnet**: Best cost/quality ratio. Default for Standard and Full modes.
-- **Opus**: Deepest analysis. Recommended for Full on important decisions, mandatory
-  default for Max. The user can always override.
+**Model rationale**:
+- **Sonnet**: Best cost-to-quality ratio. Default for Standard and for Realist/Outsider in Full
+- **Opus**: Needed for Critic/Architect/Contrarian where deep reasoning and coherent counter-arguments matter
+- **Haiku**: Not recommended. Exploration is inefficient and total tokens end up ~4× Sonnet for equivalent quality
+
+## Reference files
+
+Detailed guidance lives in `references/`. Read these on demand:
+- `references/brief-format.md` — brief extraction categories and format
+- `references/context-pack.md` — Shared Context Pack creation procedure
+- `references/information-distribution.md` — per-panelist information distribution and Artifact parameterization
+- `references/panelist-prompt.md` — full panelist prompt template
+- `references/collision-analyst.md` — full Collision Analyst prompt
+- `references/output-format.md` — result presentation format
