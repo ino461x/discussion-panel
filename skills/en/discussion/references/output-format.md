@@ -19,9 +19,8 @@
 
 | # | Severity | Finding | Rationale | Panelist |
 |---|----------|---------|-----------|----------|
-| 1 | CRITICAL | [most severe finding title] | [1-2 sentence rationale] | [role] |
+| 1 | CRITICAL | [most severe finding title] | [2-3 sentence rationale] | [role] |
 | 2 | HIGH     | [next finding] | [rationale] | [role] |
-| ... | ...    | ... | ... | ... |
 
 ### Collision Analysis
 [Collision Analyst result — omit for Standard]
@@ -38,11 +37,13 @@
 *Panel complete. Which points resonated? Anything you want to dig deeper on?*
 ```
 
+Severity label definitions (CRITICAL/HIGH/MEDIUM/LOW) live in `panelist-prompt.md`.
+
 ## Sort rules
 
 Findings table rows:
 - Sort by severity (CRITICAL > HIGH > MEDIUM > LOW)
-- Within the same severity: Critic → Realist → Architect → Outsider → Contrarian
+- Within the same severity: Critic → Realist → Architect → Outsider → Contrarian (Standard mode order extended)
 
 ## Discovery honesty rule
 
@@ -55,16 +56,9 @@ already-known concerns, write honestly:
 back with "Discovery: None". That is not a failure — it is confirmation that the known
 concerns were valid.
 
-## On the removed "Reasoning Highlights" section
-
-The old skill had a "Reasoning Highlights" section that quoted the best Reasoning chain.
-The new skill does not, because panelists no longer output Reasoning chains. The
-"Rationale" column of the Findings table plays the same role (showing each finding's
-logic inline).
-
 For unusually complex topics where you want to showcase especially deep reasoning, you MAY
-add an optional "### Notable Logic" section after the Findings table. Use this sparingly —
-usually the Findings table is sufficient.
+add an optional "### Notable Logic" section after the Findings table. Usually the Rationale
+column alone is sufficient.
 
 ## Facilitation message
 

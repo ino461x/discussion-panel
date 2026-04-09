@@ -37,24 +37,24 @@ each role's Starting Artifact instruction:
 
 Fallback: if multiple candidates exist, prefer the most concrete.
 
-## Example: topic is "AI Chat refactoring"
+## Example: topic is "Chat feature refactoring"
 
 **Critic Starting Artifact instruction:**
 > Think through 3 failure scenarios. In particular, start from "what if the assumption that
-> ExclusionCtx removes negated candidates from Gemini history is wrong?"
+> the history filter always works correctly is wrong?"
 
 **Realist Starting Artifact instruction:**
 > Think through per-phase person-day estimates. In particular, prioritize the implementation
-> cost and regression verification cost of "stage-splitting Phase 4-7 of execute_chat".
+> cost and regression verification cost of "stage-splitting the request handler".
 
 **Architect Starting Artifact instruction:**
-> Think through dependency chains. In particular, starting from `services/ai_chat_service.py`,
-> map where the 3 paths (routes_ai / routes_search / line_webhook) diverge and converge.
+> Think through dependency chains. In particular, starting from the main service module,
+> map where the multiple entry points (HTTP / webhook / external API) diverge and converge.
 
 **Contrarian Starting Artifact instruction:**
-> Imagine a world where the user's core claim "3-path unification reduces complexity" was
-> never proposed. Describe what would have been built instead and why that alternative would
-> have been considered obviously correct.
+> Imagine a world where the user's core claim "unification reduces complexity" was never
+> proposed. Describe what would have been built instead and why that alternative would have
+> been considered obviously correct.
 
 **Outsider instruction (no injection):**
 > (Starting Artifact only. Do not pass topic-specific parameters.)

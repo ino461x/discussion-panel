@@ -12,11 +12,6 @@ reasoning clashes instead of echoing them.
 - Each panelist's "Starting Artifact summary" (2-3 lines, condensed by the orchestrator)
 - Each panelist's Findings (titles and rationale only, severity labels included)
 
-**Note**: In the new skill panelists do not output a Reasoning chain, so the Collision
-Analyst works from "Artifact summary + Findings". The 2-3 sentence rationale in each
-Finding contains the logic derived from the Artifact — information density is comparable
-to the old 150-200 word Reasoning chain.
-
 ## Full prompt
 
 ```
@@ -30,11 +25,11 @@ detect premise-level clashes and suspicious agreements.
 ## Starting Artifact summaries
 [Each panelist's Artifact condensed to 2-3 lines with role label]
 Example:
-  **Critic:** 3 failure scenarios: (1) ExclusionCtx's negated candidates resurface,
-    (2) Gemini cache accidentally mixes dynamic_hint, (3) regression in the adapter
-    layer from 3-path unification
-  **Realist:** Phase 4-7 stage split is medium-sized in person-days (3-5 PD). Largest
-    cost is the test rebuild in Phase 6.
+  **Critic:** 3 failure scenarios: (1) history filter's exclusion rule slips through in
+    an unexpected case, (2) cache layer accidentally mixes dynamic hints, (3) adapter-layer
+    regression during integration
+  **Realist:** Stage split is medium-sized in person-days (3-5 PD). Largest cost is
+    test rebuild.
   ...
 
 ## Findings (panelist conclusions)

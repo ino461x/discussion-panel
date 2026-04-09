@@ -117,7 +117,7 @@ That's it. The skill will assess the topic's weight and ask you to configure the
 
 | All Sonnet | Balanced (Recommended) | All Opus |
 |------------|-------------------------|----------|
-| Fast & cheap | Best cost/quality — **default for Max** | Maximum depth, explicit opt-in |
+| Fast & cheap | Best cost/quality — **default for Full and Max** | Maximum depth, explicit opt-in |
 | All panelists use Sonnet | Critic/Architect/Contrarian use Opus, others use Sonnet | All panelists use Opus |
 
 For light topics, it just runs without asking.

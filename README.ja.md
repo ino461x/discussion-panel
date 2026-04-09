@@ -76,6 +76,8 @@ cp -r discussion-panel/skills/ja/discussion .claude/skills/
 cp -r discussion-panel/skills/ja/panel .claude/skills/
 ```
 
+> **英語版:** `cp -r discussion-panel/skills/en/discussion .claude/skills/` (および `/panel`)
+
 `/discussion` と `/panel` はどちらも同じスキルを呼び出します。`panel` は利便性のための短縮エイリアスです。
 
 ### アップデート
@@ -115,7 +117,7 @@ cp -r skills/ja/panel /path/to/your/project/.claude/skills/
 
 | All Sonnet | Balanced (推奨) | All Opus |
 |------------|-----------------|----------|
-| 高速・低コスト | コスト/品質バランス最良 — **Max モードのデフォルト** | 最大限の深さ、明示的 opt-in |
+| 高速・低コスト | コスト/品質バランス最良 — **Full / Max モードのデフォルト** | 最大限の深さ、明示的 opt-in |
 | 全パネリストが Sonnet | Critic/Architect/Contrarian が Opus、他は Sonnet | 全パネリストが Opus |
 
 軽いトピックの場合は、確認なしで直接実行します。
